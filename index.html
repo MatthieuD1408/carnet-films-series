@@ -177,6 +177,8 @@
   .imp-txt{margin:.4rem 0;font-size:1rem}
   .imp-avert{margin:.5rem 0;padding:.6rem .8rem;border-radius:.8rem;background:#3a2f0a;border:1px solid #6e5a14;color:#ffe08a;font-size:.85rem}
   .imp-note{color:var(--doux);font-size:.8rem;margin:.2rem 0 .6rem}
+  .toast-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem}
+  a.petit{display:inline-flex;align-items:center;text-decoration:none;color:var(--encre)}
   #toast{position:fixed;left:1rem;right:1rem;bottom:calc(6.2rem + env(safe-area-inset-bottom));z-index:30;max-width:36rem;margin:0 auto;
     padding:.8rem 1rem;border-radius:.9rem;background:#2b2b30;border:1px solid var(--trait);box-shadow:0 10px 30px rgba(0,0,0,.6);font-size:.9rem}
   .credit{text-align:center;color:var(--doux);font-size:.68rem;margin-top:1.5rem}
@@ -951,16 +953,31 @@
     for (const it of items) { const r = ligneDe(it); r[5] = fmt(it.date); l.push(r.map(celluleCSV).join(";")); }
     return l.join("\r\n");
   }
-  async function livrer(blob, nom){
-    if (window.claude && typeof window.claude.use === "function") {
-      try { const dl = await window.claude.use("downloads"); if (!dl) return false; await dl.save({ filename: nom, data: blob }); return true; }
-      catch (e) { return false; }
-    }
+  const URL_SITE = "https://matthieud1408.github.io/carnet-films-series/";
+  const dansClaude = () => !!(window.claude && typeof window.claude.use === "function");
+  async function livrerClaude(blob, nom){
+    try { const dl = await window.claude.use("downloads"); if (!dl) return false; await dl.save({ filename: nom, data: blob }); return true; }
+    catch (e) { return false; }
+  }
+  // Navigateur normal : téléchargement automatique + lien à toucher + partage (utile sur téléphone)
+  function toastFichier(msg, blob, nom){
+    const url = URL.createObjectURL(blob);
+    try { const a = document.createElement("a"); a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {}
+    const t = $("toast"); t.replaceChildren(); clearTimeout(toast.m);
+    t.append(el("div", null, msg + " S'il ne s'est pas téléchargé tout seul, toucher « Télécharger le fichier »."));
+    const l = el("div", "toast-actions");
+    const a = el("a", "petit", "Télécharger le fichier"); a.href = url; a.download = nom; l.append(a);
     try {
-      const url = URL.createObjectURL(blob), a = document.createElement("a");
-      a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 15000); return true;
-    } catch (e) { return false; }
+      const f = new File([blob], nom, { type: blob.type });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [f] })) {
+        const b = el("button", "petit", "Partager / enregistrer ailleurs"); b.type = "button";
+        b.addEventListener("click", () => { navigator.share({ files: [f], title: nom }).catch(() => {}); });
+        l.append(b);
+      }
+    } catch (e) {}
+    const x = el("button", "petit", "Fermer"); x.type = "button";
+    x.addEventListener("click", () => { t.hidden = true; setTimeout(() => URL.revokeObjectURL(url), 500); });
+    l.append(x); t.append(l); t.hidden = false;
   }
   async function exporter(){
     menuDonnees(false);
@@ -976,11 +993,14 @@
     } catch (e) {
       csv = true; blob = new Blob(["﻿" + versCSV(items)], { type: "text/csv;charset=utf-8" }); nom = "carnet-films-series-" + jour + ".csv";
     }
-    const ok = await livrer(blob, nom);
-    toast(ok
-      ? (csv ? "Le lecteur Excel n'a pas pu se charger (connexion ?) : le carnet a été exporté en .csv, qui s'ouvre aussi dans Excel. " : "")
-        + "Fichier « " + nom + " » créé : " + items.length + " titre" + (items.length > 1 ? "s" : "") + "."
-      : "L'export n'a pas pu être enregistré depuis cette page.");
+    const msg = (csv ? "Le lecteur Excel n'a pas pu se charger (connexion ?) : export en .csv, qui s'ouvre aussi dans Excel. " : "")
+      + "Fichier « " + nom + " » créé : " + items.length + " titre" + (items.length > 1 ? "s" : "") + ".";
+    if (dansClaude()) {
+      const ok = await livrerClaude(blob, nom);
+      toast(ok ? msg : "Le téléchargement n'est pas autorisé dans cette version d'essai (dans Claude). Pour exporter, ouvrir l'appli depuis son lien : " + URL_SITE);
+      return;
+    }
+    toastFichier(msg, blob, nom);
   }
   $("btnExport").addEventListener("click", exporter);
 
