@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mon carnet">
 <title>Mon carnet — films et séries</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
@@ -201,6 +204,7 @@
       </button>
       <div id="menuDonnees" class="menu" hidden role="menu">
         <button type="button" id="btnExport" role="menuitem"><span>Exporter vers Excel<br><small>Tout le carnet dans un fichier .xlsx</small></span></button>
+        <button type="button" id="btnInstall" role="menuitem" hidden><span>Installer l'appli<br><small>L'ajouter à l'écran d'accueil</small></span></button>
         <button type="button" id="btnImport" role="menuitem"><span>Importer un fichier<br><small>Reprendre un export (.xlsx ou .csv)</small></span></button>
       </div>
       <div id="menuTri" class="menu" hidden role="menu">
@@ -1167,6 +1171,17 @@
     sauver(); afficher(); fermerImport();
     toast("Carnet remplacé : " + n + " titre" + (n > 1 ? "s" : "") + " importé" + (n > 1 ? "s" : "") + ".");
   });
+
+  /* ---------- Installation sur l'écran d'accueil ---------- */
+  let invite = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); invite = e; $("btnInstall").hidden = false; });
+  window.addEventListener("appinstalled", () => { invite = null; $("btnInstall").hidden = true; toast("Appli installée : elle est sur l'écran d'accueil."); });
+  $("btnInstall").addEventListener("click", async () => {
+    menuDonnees(false); if (!invite) return;
+    const e = invite; invite = null; $("btnInstall").hidden = true;
+    try { e.prompt(); await e.userChoice; } catch (err) {}
+  });
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol) && !dansClaude()) navigator.serviceWorker.register("sw.js").catch(() => {});
 
   /* ---------- Démarrage ---------- */
   $("alerte").hidden = stockageOk;
