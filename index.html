@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0e10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mon carnet">
+<title>Mon carnet — films et séries</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fond:#0e0e10; --surf:#1a1a1d; --surf2:#232327; --champ:#121214; --trait:#34343a;
+    --encre:#f4f1ea; --doux:#a9a9b0; --rouge:#e50914; --rouge2:#b20710; --or:#f5c518; --vert:#46d369; --danger:#ff6b61;
+    --titre:"Bebas Neue","Oswald","Arial Narrow",Impact,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{font-size:20px;-webkit-text-size-adjust:100%}
+  body{margin:0;color:var(--encre);min-height:100vh;
+    background:radial-gradient(120% 40% at 50% -6%,rgba(229,9,20,.32),transparent 70%) no-repeat,var(--fond);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.35}
+  button,input,textarea,summary{font:inherit;color:inherit}
+  button{cursor:pointer}
+  [hidden]{display:none!important}
+  :focus-visible{outline:3px solid var(--or);outline-offset:2px}
+
+  /* ---- En-tête ---- */
+  header{position:sticky;top:0;z-index:5;background:rgba(14,14,16,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    padding:calc(env(safe-area-inset-top) + .5rem) 1rem 0}
+  .barre{display:flex;align-items:center;justify-content:space-between;gap:.4rem}
+  .marque{min-width:0}
+  .marque h1{font-family:var(--titre);font-weight:400;font-size:clamp(1.25rem,5.8vw,2.3rem);line-height:1;margin:0;letter-spacing:.05em;color:var(--rouge);white-space:nowrap}
+  .marque small{display:block;color:var(--doux);font-size:.6rem;letter-spacing:.26em;white-space:nowrap;text-transform:uppercase;margin-top:.1rem}
+  .outils{display:flex;gap:.35rem;position:relative;flex:0 0 auto}
+  .icone{width:2.65rem;height:2.65rem;border-radius:50%;border:1px solid var(--trait);background:var(--surf);color:var(--encre);display:grid;place-items:center;padding:0}
+  .icone[aria-expanded="true"],.icone.on{background:var(--rouge);border-color:var(--rouge);color:#fff}
+  .menu{position:absolute;right:0;top:3.2rem;width:min(20rem,calc(100vw - 2rem));background:var(--surf2);
+    border:1px solid var(--trait);border-radius:1rem;padding:.4rem;box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:9}
+  .menu button{display:flex;justify-content:space-between;align-items:center;gap:.5rem;width:100%;text-align:left;
+    background:none;border:0;border-radius:.7rem;padding:.7rem .8rem;min-height:3.2rem}
+  .menu button small{color:var(--doux)}
+  .menu button.on{background:rgba(229,9,20,.18);font-weight:700}
+  .menu button .coche{visibility:hidden;color:var(--rouge)}
+  .menu button.on .coche{visibility:visible}
+  .pellicule{height:12px;margin:.55rem -1rem 0;background:#050506;position:relative}
+  .pellicule::before{content:"";position:absolute;left:0;right:0;top:3px;bottom:3px;
+    background:repeating-linear-gradient(90deg,#3a3a41 0 10px,transparent 10px 20px)}
+
+  /* ---- Onglets ---- */
+  .onglets{display:grid;grid-template-columns:repeat(5,1fr);gap:.3rem;padding:.6rem 0 .7rem}
+  .onglet{--c:#f4f1ea;--t:#111;border:1px solid var(--trait);background:var(--surf);border-radius:.8rem;
+    padding:.35rem .1rem;min-height:3.1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.05rem;
+    font-weight:700;font-size:.72rem;line-height:1.1;text-align:center;border-bottom:3px solid var(--c)}
+  .onglet span{font-weight:400;font-size:.65rem;color:var(--doux)}
+  .onglet[aria-selected="true"]{background:var(--c);color:var(--t);border-color:var(--c)}
+  .onglet[aria-selected="true"] span{color:var(--t);opacity:.8}
+
+  #zoneRech{padding:0 1rem;max-width:44rem;margin:.7rem auto 0}
+  #rech{width:100%;padding:.7rem 1rem;border:1px solid var(--trait);border-radius:999px;background:var(--champ);min-height:3rem}
+  #rech::placeholder{color:var(--doux)}
+
+  #alerte{margin:.8rem 1rem 0;padding:.7rem .9rem;border-radius:.8rem;background:#3b1512;color:#ffb4ab;font-size:.85rem}
+
+  main{padding:.6rem 1rem calc(7rem + env(safe-area-inset-bottom));max-width:44rem;margin:0 auto}
+  #compteur{margin:.4rem .2rem .7rem;color:var(--doux);font-size:.8rem;letter-spacing:.04em}
+  #autres{margin:0 0 .9rem;padding:.7rem .9rem;border-radius:.9rem;background:#3a2f0a;border:1px solid #6e5a14;font-size:.85rem}
+  #autres p{margin:0 0 .4rem;color:#ffe08a;font-weight:700}
+  #autres button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #6e5a14;padding:.55rem 0;color:var(--encre);min-height:2.6rem}
+  ul{list-style:none;margin:0;padding:0;display:grid;gap:.8rem}
+
+  /* ---- Cartes ---- */
+  .carte{--c:var(--rouge);background:linear-gradient(180deg,var(--surf2),var(--surf));border:1px solid var(--trait);
+    border-left:4px solid var(--c);border-radius:1rem;overflow:hidden}
+  .zone{display:grid;grid-template-columns:4.2rem 1fr auto;gap:.8rem;width:100%;text-align:left;background:none;border:0;padding:.8rem;align-items:start}
+  .aff{width:4.2rem;aspect-ratio:2/3;border-radius:.5rem;overflow:hidden;background:#111;box-shadow:0 4px 12px rgba(0,0,0,.5);position:relative}
+  .aff img{width:100%;height:100%;object-fit:cover;display:block}
+  .aff .tuile{width:100%;height:100%;display:grid;place-items:center;font-family:var(--titre);font-size:2.2rem;color:rgba(255,255,255,.92)}
+  .txt{min-width:0}
+  .txt .titre{font-size:1.12rem;font-weight:700;overflow-wrap:anywhere;line-height:1.2}
+  .meta{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin-top:.35rem}
+  .pill{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:700;border-radius:999px;padding:.12rem .55rem;
+    background:rgba(255,255,255,.08);border:1px solid var(--c);color:var(--encre)}
+  .pill::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:var(--c)}
+  .type{font-size:.7rem;color:var(--doux);letter-spacing:.08em;text-transform:uppercase}
+  .prog{margin-top:.55rem;font-size:.8rem;color:var(--doux)}
+  .prog b{color:var(--encre)}
+  .barre-prog{height:6px;border-radius:3px;background:#3a3a40;margin-top:.3rem;overflow:hidden}
+  .barre-prog i{display:block;height:100%;background:var(--rouge)}
+  .com{margin-top:.5rem;color:#d6d3cc;font-size:.85rem;overflow-wrap:anywhere;white-space:pre-wrap;
+    border-left:2px solid var(--trait);padding-left:.55rem}
+  .etoile{display:flex;align-items:baseline;gap:.15rem;color:var(--or);font-family:var(--titre);font-size:1.7rem;line-height:1;white-space:nowrap}
+  .etoile small{font-family:system-ui,sans-serif;font-size:.65rem;color:var(--doux)}
+  .suivant{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:3.2rem;border:0;border-top:1px solid var(--trait);
+    background:rgba(255,255,255,.05);font-weight:700;font-size:.9rem;color:var(--encre)}
+  .suivant:active{background:rgba(70,211,105,.18)}
+  .suivant .rond{width:1.5rem;height:1.5rem;border-radius:50%;border:2px solid var(--vert);display:grid;place-items:center;color:var(--vert);font-size:.85rem}
+  .fini{display:flex;justify-content:center;align-items:center;min-height:2.6rem;border-top:1px solid var(--trait);color:var(--vert);font-weight:700;font-size:.85rem}
+  #vide{text-align:center;color:var(--doux);padding:2.5rem 1rem;font-size:1rem}
+
+  /* ---- Barre du bas ---- */
+  .bas{position:fixed;left:0;right:0;bottom:0;padding:1.2rem 1rem calc(.8rem + env(safe-area-inset-bottom));
+    background:linear-gradient(to top,var(--fond) 62%,rgba(14,14,16,0))}
+  .gros{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;max-width:44rem;margin:0 auto;
+    min-height:3.8rem;border-radius:.9rem;border:2px solid var(--rouge);background:var(--rouge);color:#fff;font-weight:700;font-size:1.05rem;padding:.6rem 1rem;text-align:center}
+  .gros:active{background:var(--rouge2)}
+  .gros.clair{background:transparent;border-color:var(--trait);color:var(--encre)}
+  .gros.danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+  .lien{background:none;border:0;color:#ff8a82;text-decoration:underline;padding:.5rem 0;font-size:.9rem}
+  .petit{min-height:2.8rem;border-radius:.7rem;border:1px solid var(--trait);background:var(--surf2);padding:.4rem .8rem;font-size:.85rem;font-weight:700}
+
+  /* ---- Feuille ---- */
+  .voile{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center}
+  .feuille{background:var(--surf);width:100%;max-width:36rem;max-height:96vh;overflow:auto;border:1px solid var(--trait);
+    border-radius:1.4rem 1.4rem 0 0;padding:1.1rem 1rem calc(1.2rem + env(safe-area-inset-bottom))}
+  @media (min-width:700px){.voile{align-items:center}.feuille{border-radius:1.4rem}}
+  .feuille h2{margin:.1rem 0 .4rem;font-family:var(--titre);font-weight:400;font-size:2rem;letter-spacing:.05em;color:var(--rouge)}
+  label,.etiq{display:block;font-weight:700;margin:1.1rem 0 .45rem}
+  .facult{font-weight:400;color:var(--doux);font-size:.85rem}
+  #fTitre,#fCom{width:100%;border:1px solid var(--trait);border-radius:.9rem;padding:.75rem .9rem;background:var(--champ)}
+  #fTitre{min-height:3.2rem;font-size:1.1rem}
+  #fCom{min-height:5.5rem;resize:vertical}
+  .chips{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem}
+  .chips button{--c:var(--rouge);--t:#fff;min-height:3.1rem;border-radius:.9rem;border:1px solid var(--trait);background:var(--champ);font-weight:700;
+    display:flex;align-items:center;justify-content:center;gap:.5rem}
+  .chips button::before{content:"";width:.6rem;height:.6rem;border-radius:50%;background:var(--c)}
+  .chips button[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:var(--t)}
+  .chips button[aria-pressed="true"]::before{background:var(--t)}
+  #chipsKind button::before{display:none}
+  #etat,#webEtat{margin:.6rem 0 0;font-size:.9rem;color:var(--doux)}
+  #etat.occupe,#webEtat.occupe{color:#ff8a82;font-weight:700}
+  #etat.occupe::before,#webEtat.occupe::before{content:"";display:inline-block;width:.8rem;height:.8rem;margin-right:.5rem;border-radius:50%;
+    border:3px solid var(--rouge);border-right-color:transparent;animation:tourne .8s linear infinite;vertical-align:-.1rem}
+  @keyframes tourne{to{transform:rotate(360deg)}}
+  #webEtat.alerte{color:#ffe08a}
+  #pistes{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+  #pistes button{border:1px solid var(--rouge);background:transparent;color:var(--encre);border-radius:999px;padding:.45rem .9rem;font-size:.9rem}
+  #doublon{margin-top:.6rem;padding:.6rem .8rem;border-radius:.8rem;background:#3a2f0a;border:1px solid #6e5a14;color:#ffe08a;font-size:.9rem}
+  #erreur{margin-top:.5rem;color:var(--danger);font-weight:700;font-size:.9rem}
+
+  /* Saisons / épisodes */
+  #blocSerie{margin-top:.4rem;padding:.2rem 0 .6rem;border-top:1px solid var(--trait)}
+  #candidats{display:flex;gap:.6rem;overflow-x:auto;padding:.6rem 0 .3rem;scroll-snap-type:x proximity}
+  #candidats button{flex:0 0 auto;width:5.6rem;background:var(--champ);border:2px solid var(--trait);border-radius:.7rem;padding:.35rem;text-align:center;scroll-snap-align:start}
+  #candidats button[aria-pressed="true"]{border-color:var(--rouge)}
+  #candidats .aff{width:100%}
+  #candidats small{display:block;font-size:.68rem;line-height:1.15;margin-top:.3rem;overflow-wrap:anywhere}
+  #candidats small span{color:var(--doux)}
+  #barSaisons{display:flex;gap:.45rem;overflow-x:auto;padding:.4rem 0 .5rem}
+  #barSaisons button{flex:0 0 auto;min-width:3.4rem;min-height:3rem;border-radius:.8rem;border:1px solid var(--trait);background:var(--champ);font-weight:700;padding:0 .6rem}
+  #barSaisons button[aria-pressed="true"]{background:var(--rouge);border-color:var(--rouge);color:#fff}
+  #barSaisons button.fait::after{content:" ✓";color:var(--vert)}
+  #barSaisons button[aria-pressed="true"].fait::after{color:#fff}
+  .cpt{color:var(--doux);font-size:.85rem;margin:.2rem 0 .5rem}
+  .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(3.2rem,1fr));gap:.45rem}
+  .grille button{min-height:3.2rem;border-radius:.8rem;border:1px solid var(--trait);background:var(--champ);font-weight:700;font-size:1.05rem}
+  .grille button[aria-pressed="true"]{background:var(--vert);border-color:var(--vert);color:#06210e}
+  .deux-btn{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem}
+  #cptTotal{margin-top:.7rem;font-weight:700}
+  details#manuel{margin-top:.9rem;border:1px solid var(--trait);border-radius:.9rem;padding:.2rem .8rem}
+  details#manuel summary{min-height:3rem;display:flex;align-items:center;cursor:pointer;font-weight:700}
+  .ligne-saison{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.35rem 0;border-top:1px solid var(--trait)}
+  .stepper{display:flex;align-items:center;gap:.35rem}
+  .stepper button{width:2.8rem;height:2.8rem;border-radius:.7rem;border:1px solid var(--trait);background:var(--surf2);font-size:1.3rem;font-weight:700;padding:0}
+  .stepper input{width:3.6rem;height:2.8rem;text-align:center;border:1px solid var(--trait);border-radius:.7rem;background:var(--champ)}
+  .source{font-size:.7rem;color:var(--doux);margin-top:.6rem}
+
+  /* Note */
+  .echelle{display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem}
+  .echelle button{min-height:3.2rem;border-radius:.9rem;border:1px solid var(--trait);background:var(--champ);font-weight:700;font-size:1.15rem}
+  .echelle button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#241c00}
+  .bornes{display:flex;justify-content:space-between;color:var(--doux);font-size:.8rem;margin-top:.4rem}
+  #noteTxt{font-weight:700;margin-top:.3rem}
+  .actions{display:grid;gap:.6rem;margin-top:1.3rem}
+  #zoneSuppr{margin-top:.4rem}
+  .imp-txt{margin:.4rem 0;font-size:1rem}
+  .imp-avert{margin:.5rem 0;padding:.6rem .8rem;border-radius:.8rem;background:#3a2f0a;border:1px solid #6e5a14;color:#ffe08a;font-size:.85rem}
+  .imp-note{color:var(--doux);font-size:.8rem;margin:.2rem 0 .6rem}
+  #toast{position:fixed;left:1rem;right:1rem;bottom:calc(6.2rem + env(safe-area-inset-bottom));z-index:30;max-width:36rem;margin:0 auto;
+    padding:.8rem 1rem;border-radius:.9rem;background:#2b2b30;border:1px solid var(--trait);box-shadow:0 10px 30px rgba(0,0,0,.6);font-size:.9rem}
+  .credit{text-align:center;color:var(--doux);font-size:.68rem;margin-top:1.5rem}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="barre">
+    <div class="marque"><h1>MON CARNET</h1><small>Films &amp; séries</small></div>
+    <div class="outils">
+      <button id="btnLoupe" class="icone" aria-label="Chercher dans la liste" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      </button>
+      <button id="btnDonnees" class="icone" aria-label="Exporter ou importer le carnet" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19.5h14"/></svg>
+      </button>
+      <button id="btnTri" class="icone" aria-label="Choisir l'ordre de tri" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h11M4 18h6"/></svg>
+      </button>
+      <div id="menuDonnees" class="menu" hidden role="menu">
+        <button type="button" id="btnExport" role="menuitem"><span>Exporter vers Excel<br><small>Tout le carnet dans un fichier .xlsx</small></span></button>
+        <button type="button" id="btnImport" role="menuitem"><span>Importer un fichier<br><small>Reprendre un export (.xlsx ou .csv)</small></span></button>
+      </div>
+      <div id="menuTri" class="menu" hidden role="menu">
+        <button type="button" role="menuitemradio" data-tri="alpha"><span>Ordre alphabétique<br><small>de A à Z</small></span><span class="coche">✓</span></button>
+        <button type="button" role="menuitemradio" data-tri="date"><span>Par date d'ajout<br><small>du plus récent au plus ancien</small></span><span class="coche">✓</span></button>
+      </div>
+    </div>
+  </div>
+  <div class="pellicule" aria-hidden="true"></div>
+  <nav class="onglets" id="onglets" role="tablist" aria-label="Plateformes"></nav>
+</header>
+
+<div id="zoneRech" hidden>
+  <input id="rech" type="search" placeholder="Chercher un titre (toutes plateformes de l'onglet)" aria-label="Chercher un titre">
+</div>
+
+<div id="alerte" hidden>Attention : cet appareil ne permet pas de garder la liste en mémoire. Elle sera perdue à la fermeture.</div>
+
+<main>
+  <p id="compteur" aria-live="polite"></p>
+  <div id="autres" hidden></div>
+  <ul id="liste"></ul>
+  <p id="vide" hidden></p>
+  <p class="credit">Données des séries : <a href="https://www.tvmaze.com" style="color:inherit">TVmaze.com</a> (CC BY-SA)</p>
+</main>
+
+<div class="bas">
+  <button id="btnAjout" class="gros" type="button">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    <span id="libAjout">Ajouter un titre</span>
+  </button>
+</div>
+
+<div id="voile" class="voile" hidden>
+  <section id="feuille" class="feuille" role="dialog" aria-modal="true" aria-labelledby="feuilleTitre">
+    <h2 id="feuilleTitre">Ajouter</h2>
+
+    <div class="etiq">Plateforme</div>
+    <div id="chipsPlat" class="chips" role="group" aria-label="Plateforme"></div>
+
+    <div class="etiq">Type</div>
+    <div id="chipsKind" class="chips" role="group" aria-label="Type">
+      <button type="button" data-kind="film" aria-pressed="false">Film</button>
+      <button type="button" data-kind="serie" aria-pressed="false">Série</button>
+    </div>
+
+    <div class="etiq">Titre</div>
+    <button id="btnPhoto" class="gros clair" type="button">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.3" r="3.6"/>
+      </svg>
+      Prendre le titre en photo
+    </button>
+    <button id="btnGalerie" class="lien" type="button">ou choisir une photo déjà prise</button>
+    <input id="fichierPhoto" type="file" accept="image/*" capture="environment" hidden>
+    <input id="fichierGalerie" type="file" accept="image/*" hidden>
+    <p id="etat" aria-live="polite"></p>
+    <div id="pistes"></div>
+    <input id="fTitre" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="Écrire ou corriger le titre ici" aria-label="Titre du film ou de la série" style="margin-top:.6rem">
+    <div id="doublon" hidden></div>
+    <div id="erreur" hidden></div>
+
+    <section id="blocSerie" hidden>
+      <div class="etiq">Saisons et épisodes</div>
+      <p id="webEtat" aria-live="polite"></p>
+      <div id="candidats"></div>
+      <button id="btnMaj" class="lien" type="button">Actualiser depuis internet</button>
+      <p id="saisonsVide" class="cpt" hidden>Aucune saison connue pour l'instant. Utiliser la recherche ci-dessus, ou régler à la main plus bas.</p>
+      <div id="zoneEp" hidden>
+        <div id="barSaisons" role="group" aria-label="Saisons"></div>
+        <div id="cptSaison" class="cpt"></div>
+        <div id="grilleEp" class="grille" role="group" aria-label="Épisodes"></div>
+        <div class="deux-btn">
+          <button id="btnToutes" class="petit" type="button">Tout cocher dans cette saison</button>
+          <button id="btnAucun" class="petit" type="button">Tout décocher</button>
+        </div>
+        <div id="cptTotal"></div>
+      </div>
+      <details id="manuel">
+        <summary>Corriger les saisons et épisodes à la main</summary>
+        <div id="manuelListe"></div>
+        <div class="deux-btn" style="margin-bottom:.6rem">
+          <button id="btnAjSaison" class="petit" type="button">+ Ajouter une saison</button>
+          <button id="btnRetSaison" class="petit" type="button">Retirer la dernière</button>
+        </div>
+      </details>
+      <p id="source" class="source"></p>
+    </section>
+
+    <div class="etiq">Note sur 10 <span class="facult">(facultatif)</span></div>
+    <div id="echelle" class="echelle"></div>
+    <div class="bornes"><span>0 = pas aimé</span><span>10 = adoré</span></div>
+    <div id="noteTxt"></div>
+
+    <label for="fCom">Commentaire <span class="facult">(facultatif)</span></label>
+    <textarea id="fCom" placeholder="Un petit mot pour s'en souvenir…"></textarea>
+
+    <div class="actions">
+      <button id="btnSave" class="gros" type="button">Enregistrer</button>
+      <button id="btnCancel" class="gros clair" type="button">Annuler</button>
+    </div>
+    <div id="zoneSuppr" hidden>
+      <button id="btnSuppr" class="gros danger" type="button" style="margin-top:1rem">Supprimer du carnet</button>
+      <div id="confSuppr" hidden class="actions">
+        <button id="btnSupprOui" class="gros" type="button" style="background:var(--danger);border-color:var(--danger);color:#1a0402">Oui, supprimer</button>
+        <button id="btnSupprNon" class="gros clair" type="button">Non, garder</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<input id="fichierImport" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<div id="voileImp" class="voile" hidden>
+  <section id="feuilleImp" class="feuille" role="dialog" aria-modal="true" aria-labelledby="impTitre">
+    <h2 id="impTitre">IMPORTER</h2>
+    <p id="impResume" class="imp-txt"></p>
+    <p id="impAvert" class="imp-avert" hidden></p>
+    <div id="impChoix" hidden>
+      <p class="imp-note">« Ajouter et fusionner » garde tout ce qui est déjà dans le carnet : les titres identiques (même titre, même plateforme) sont complétés et les épisodes vus sont réunis.</p>
+      <div class="actions">
+        <button id="btnImpFusion" class="gros" type="button">Ajouter et fusionner</button>
+        <button id="btnImpRempl" class="gros danger" type="button">Remplacer tout le carnet</button>
+      </div>
+      <div id="confRempl" hidden>
+        <p class="imp-avert" id="confRemplTxt"></p>
+        <div class="actions">
+          <button id="btnReplOui" class="gros" type="button" style="background:var(--danger);border-color:var(--danger);color:#1a0402">Oui, tout remplacer</button>
+          <button id="btnReplNon" class="gros clair" type="button">Non, annuler</button>
+        </div>
+      </div>
+    </div>
+    <div class="actions"><button id="btnImpFermer" class="gros clair" type="button">Fermer</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const KEY = "carnet-v2", KEY_V1 = "carnet-netflix-v1";
+
+  const PLATS = {
+    netflix: { nom: "Netflix",      court: "Netflix", c: "#e50914", t: "#ffffff" },
+    prime:   { nom: "Prime Video",  court: "Prime",   c: "#00a8e1", t: "#001820" },
+    disney:  { nom: "Disney+",      court: "Disney+", c: "#4f7bff", t: "#ffffff" },
+    tf1:     { nom: "TF1+",         court: "TF1+",    c: "#ff9d00", t: "#1f1200" }
+  };
+  const ORDRE = ["netflix", "prime", "disney", "tf1"];
+
+  /* ---------- Outils ---------- */
+  const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const fmt = t => new Date(t).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  function el(tag, cls, txt){ const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const cle = (s, e) => s + "-" + e;
+  const somme = a => a.reduce((x, y) => x + y, 0);
+
+  function normItem(i){
+    return {
+      id: i.id || newId(), title: String(i.title || ""),
+      plat: PLATS[i.plat] ? i.plat : "netflix", kind: i.kind === "serie" ? "serie" : "film",
+      rating: typeof i.rating === "number" ? i.rating : null, comment: i.comment || "", date: i.date || Date.now(),
+      poster: i.poster || "", tvmazeId: i.tvmazeId || null, source: i.source || "",
+      seasons: Array.isArray(i.seasons) ? i.seasons.map(n => Math.max(0, n | 0)) : [],
+      vus: Array.isArray(i.vus) ? i.vus.filter(s => typeof s === "string") : []
+    };
+  }
+
+  /* ---------- Stockage ---------- */
+  let etat = { items: [], tri: "alpha", onglet: "tout", plat: "netflix", kind: "film" };
+  let stockageOk = true;
+  try {
+    const brut = localStorage.getItem(KEY);
+    if (brut) {
+      const o = JSON.parse(brut);
+      if (o && Array.isArray(o.items)) etat = {
+        items: o.items.map(normItem), tri: o.tri === "date" ? "date" : "alpha",
+        onglet: o.onglet === "tout" || PLATS[o.onglet] ? o.onglet : "tout",
+        plat: PLATS[o.plat] ? o.plat : "netflix", kind: o.kind === "serie" ? "serie" : "film"
+      };
+    } else {
+      const v1 = localStorage.getItem(KEY_V1); // reprise de la V1 : tout était sur Netflix
+      if (v1) { const o = JSON.parse(v1); if (o && Array.isArray(o.items)) { etat.items = o.items.map(i => normItem(Object.assign({}, i, { plat: "netflix", kind: "film" }))); etat.tri = o.tri === "date" ? "date" : "alpha"; } }
+    }
+  } catch (e) { stockageOk = false; }
+  function sauver(){
+    try { localStorage.setItem(KEY, JSON.stringify(etat)); } catch (e) { stockageOk = false; }
+    $("alerte").hidden = stockageOk;
+  }
+
+  /* ---------- Suivi des épisodes ---------- */
+  function vusValides(it){
+    const ok = new Set(it.vus);
+    let n = 0, dernier = null;
+    it.seasons.forEach((nb, i) => { for (let e = 1; e <= nb; e++) if (ok.has(cle(i + 1, e))) { n++; dernier = { s: i + 1, e }; } });
+    return { n, dernier, set: ok };
+  }
+  function prochain(it){
+    const { set } = vusValides(it);
+    for (let i = 0; i < it.seasons.length; i++) for (let e = 1; e <= it.seasons[i]; e++) if (!set.has(cle(i + 1, e))) return { s: i + 1, e };
+    return null;
+  }
+
+  /* ---------- Affichage de la liste ---------- */
+  function tuile(titre){
+    let h = 0; for (const ch of norm(titre)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const t = el("div", "tuile", (titre.trim()[0] || "?").toUpperCase());
+    t.style.background = "linear-gradient(160deg,hsl(" + (h % 360) + " 45% 26%),hsl(" + ((h + 40) % 360) + " 50% 12%))";
+    return t;
+  }
+  function affiche(titre, poster){
+    const a = el("div", "aff");
+    if (poster) {
+      const img = document.createElement("img");
+      img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer"; img.src = poster;
+      img.addEventListener("error", () => { a.replaceChildren(tuile(titre)); });
+      a.append(img);
+    } else a.append(tuile(titre));
+    return a;
+  }
+
+  function carte(it){
+    const P = PLATS[it.plat];
+    const li = el("li", "carte"); li.style.setProperty("--c", P.c);
+    const zone = el("button", "zone"); zone.type = "button";
+    zone.setAttribute("aria-label", "Ouvrir la fiche : " + it.title);
+    zone.append(affiche(it.title, it.poster));
+
+    const txt = el("div", "txt");
+    txt.append(el("div", "titre", it.title));
+    const meta = el("div", "meta");
+    meta.append(el("span", "pill", P.nom), el("span", "type", it.kind === "serie" ? "Série" : "Film"));
+    txt.append(meta);
+
+    const total = somme(it.seasons);
+    if (it.kind === "serie" && total > 0) {
+      const v = vusValides(it);
+      const p = el("div", "prog");
+      if (v.dernier) { p.append("Vu jusqu'à "); p.append(el("b", null, "S" + v.dernier.s + " É" + v.dernier.e)); }
+      else p.append("Aucun épisode coché");
+      p.append(" · " + v.n + " / " + total);
+      const bar = el("div", "barre-prog"); const fill = el("i"); fill.style.width = Math.round(100 * v.n / total) + "%"; bar.append(fill);
+      p.append(bar); txt.append(p);
+    }
+    if (it.comment) txt.append(el("div", "com", it.comment));
+    zone.append(txt);
+
+    if (it.rating != null) {
+      const r = el("div", "etoile"); r.append("★" + it.rating, el("small", null, "/10")); zone.append(r);
+    } else zone.append(el("span"));
+    zone.addEventListener("click", () => ouvrir(it));
+    li.append(zone);
+
+    if (it.kind === "serie" && total > 0) {
+      const nx = prochain(it);
+      if (nx) {
+        const b = el("button", "suivant"); b.type = "button";
+        b.setAttribute("aria-label", "Marquer comme vu : saison " + nx.s + ", épisode " + nx.e);
+        b.append(el("span", "rond", "✓"), "Vu : saison " + nx.s + ", épisode " + nx.e);
+        b.addEventListener("click", () => { it.vus.push(cle(nx.s, nx.e)); sauver(); afficher(); });
+        li.append(b);
+      } else li.append(el("div", "fini", "Série terminée ✓"));
+    }
+    return li;
+  }
+
+  function afficher(){
+    // Onglets
+    const nav = $("onglets"); nav.replaceChildren();
+    const defs = [["tout", { court: "Tout", c: "#f4f1ea", t: "#111" }]].concat(ORDRE.map(k => [k, PLATS[k]]));
+    for (const [k, P] of defs) {
+      const n = k === "tout" ? etat.items.length : etat.items.filter(i => i.plat === k).length;
+      const b = el("button", "onglet"); b.type = "button"; b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", String(etat.onglet === k));
+      b.style.setProperty("--c", P.c); b.style.setProperty("--t", P.t);
+      b.append(P.court, el("span", null, String(n)));
+      b.addEventListener("click", () => { etat.onglet = k; sauver(); afficher(); window.scrollTo(0, 0); });
+      nav.append(b);
+    }
+
+    const q = norm($("rech").value);
+    const dansOnglet = etat.onglet === "tout" ? etat.items : etat.items.filter(i => i.plat === etat.onglet);
+    const items = dansOnglet.filter(i => !q || norm(i.title).includes(q));
+    if (etat.tri === "alpha") items.sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base", numeric: true }));
+    else items.sort((a, b) => b.date - a.date);
+
+    const ul = $("liste"); ul.replaceChildren();
+    for (const it of items) ul.append(carte(it));
+
+    const total = dansOnglet.length;
+    const ordre = etat.tri === "alpha" ? "de A à Z" : "du plus récent au plus ancien";
+    $("compteur").textContent = q
+      ? items.length + " résultat" + (items.length > 1 ? "s" : "") + " sur " + total
+      : total + " titre" + (total > 1 ? "s" : "") + " · " + ordre;
+
+    const vide = $("vide");
+    if (!items.length) {
+      vide.hidden = false;
+      vide.textContent = total
+        ? "Aucun titre ne correspond à cette recherche."
+        : (etat.onglet === "tout"
+            ? "Le carnet est vide pour l'instant. Appuyer sur « Ajouter » pour noter le premier film ou la première série."
+            : "Rien sur " + PLATS[etat.onglet].nom + " pour l'instant.");
+    } else vide.hidden = true;
+
+    // Même titre dans une autre rubrique ?
+    const boite = $("autres"); boite.replaceChildren();
+    if (q && etat.onglet !== "tout") {
+      const ailleurs = etat.items.filter(i => i.plat !== etat.onglet && norm(i.title).includes(q)).slice(0, 4);
+      if (ailleurs.length) {
+        boite.append(el("p", null, "Aussi dans une autre plateforme :"));
+        for (const it of ailleurs) {
+          const b = el("button", null, it.title + " — " + PLATS[it.plat].nom + (it.rating != null ? " · ★" + it.rating + "/10" : ""));
+          b.type = "button"; b.addEventListener("click", () => ouvrir(it)); boite.append(b);
+        }
+      }
+      boite.hidden = !ailleurs.length;
+    } else boite.hidden = true;
+
+    $("libAjout").textContent = etat.onglet === "tout" ? "Ajouter un titre" : "Ajouter sur " + PLATS[etat.onglet].nom;
+    document.querySelectorAll("#menuTri button").forEach(b => b.classList.toggle("on", b.dataset.tri === etat.tri));
+  }
+
+  /* ---------- Tri et recherche ---------- */
+  function menuTri(ouvert){
+    if (ouvert) menuDonnees(false);
+    $("menuTri").hidden = !ouvert; $("btnTri").setAttribute("aria-expanded", String(ouvert));
+  }
+  function menuDonnees(ouvert){
+    if (ouvert) { $("menuTri").hidden = true; $("btnTri").setAttribute("aria-expanded", "false"); chargerXLSX().catch(() => {}); }
+    $("menuDonnees").hidden = !ouvert; $("btnDonnees").setAttribute("aria-expanded", String(ouvert));
+  }
+  $("btnTri").addEventListener("click", e => { e.stopPropagation(); menuTri($("menuTri").hidden); });
+  $("btnDonnees").addEventListener("click", e => { e.stopPropagation(); menuDonnees($("menuDonnees").hidden); });
+  document.querySelectorAll("#menuTri button").forEach(b => b.addEventListener("click", () => { etat.tri = b.dataset.tri; sauver(); menuTri(false); afficher(); }));
+  document.addEventListener("click", e => { if (!e.target.closest(".outils")) { menuTri(false); menuDonnees(false); } });
+  $("btnLoupe").addEventListener("click", () => {
+    const ouvert = $("zoneRech").hidden;
+    $("zoneRech").hidden = !ouvert; $("btnLoupe").setAttribute("aria-expanded", String(ouvert)); $("btnLoupe").classList.toggle("on", ouvert);
+    if (ouvert) $("rech").focus(); else { $("rech").value = ""; afficher(); }
+  });
+  $("rech").addEventListener("input", afficher);
+
+  /* ---------- Feuille d'ajout / modification ---------- */
+  let ed = null;          // élément en cours d'édition
+  let jeton = 0;          // lecture de photo
+  let jetonRech = 0;      // recherche de saisons
+  let minuterie = null;
+
+  // Plateformes (puces)
+  const chipsPlat = $("chipsPlat");
+  for (const k of ORDRE) {
+    const b = el("button", null, PLATS[k].nom); b.type = "button"; b.dataset.plat = k;
+    b.style.setProperty("--c", PLATS[k].c); b.style.setProperty("--t", PLATS[k].t); b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => { ed.plat = k; majPlat(); verifDoublon(); });
+    chipsPlat.append(b);
+  }
+  function majPlat(){ [...chipsPlat.children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.plat === ed.plat))); }
+  document.querySelectorAll("#chipsKind button").forEach(b => b.addEventListener("click", () => {
+    ed.kind = b.dataset.kind; majKind(); majSerie();
+    if (ed.kind === "serie" && !ed.saisons.length) planifier(200);
+  }));
+  function majKind(){ document.querySelectorAll("#chipsKind button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === ed.kind))); }
+
+  // Note
+  const echelle = $("echelle");
+  for (let n = 0; n <= 10; n++) {
+    const b = el("button", null, String(n)); b.type = "button"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", n + " sur 10");
+    b.addEventListener("click", () => { ed.note = ed.note === n ? null : n; majNote(); });
+    echelle.append(b);
+  }
+  function majNote(){
+    [...echelle.children].forEach((b, i) => b.setAttribute("aria-pressed", String(ed.note === i)));
+    $("noteTxt").textContent = ed.note == null ? "Pas encore de note" : "Note choisie : " + ed.note + " sur 10";
+  }
+  function statut(txt, occupe){ const e = $("etat"); e.textContent = txt || ""; e.classList.toggle("occupe", !!occupe); }
+  function webStatut(txt, occupe, alerte){ const e = $("webEtat"); e.textContent = txt || ""; e.classList.toggle("occupe", !!occupe); e.classList.toggle("alerte", !!alerte); }
+
+  function ouvrir(item){
+    jeton++; jetonRech++; clearTimeout(minuterie);
+    ed = item
+      ? { id: item.id, plat: item.plat, kind: item.kind, note: item.rating, poster: item.poster, tvmazeId: item.tvmazeId, source: item.source,
+          saisons: item.seasons.slice(), vus: new Set(item.vus), sc: 1, liste: [] }
+      : { id: null, plat: etat.onglet !== "tout" ? etat.onglet : etat.plat, kind: etat.kind, note: null, poster: "", tvmazeId: null, source: "",
+          saisons: [], vus: new Set(), sc: 1, liste: [] };
+    if (item) { const nx = prochain(item); ed.sc = nx ? nx.s : Math.max(1, item.seasons.length); }
+    $("feuilleTitre").textContent = item ? "FICHE" : "NOUVEAU TITRE";
+    $("fTitre").value = item ? item.title : "";
+    $("fCom").value = item ? item.comment : "";
+    $("pistes").replaceChildren(); $("candidats").replaceChildren(); statut(""); webStatut("");
+    $("erreur").hidden = true; $("doublon").hidden = true;
+    $("zoneSuppr").hidden = !item; $("confSuppr").hidden = true; $("btnSuppr").hidden = false;
+    $("manuel").open = false;
+    $("btnPhoto").hidden = !!item; $("btnGalerie").hidden = !!item; // la photo ne sert qu'à l'ajout
+    $("btnSave").textContent = item ? "Enregistrer les changements" : "Enregistrer";
+    majPlat(); majKind(); majNote(); majSerie(); verifDoublon();
+    $("voile").hidden = false; document.body.style.overflow = "hidden";
+    $("feuille").scrollTop = 0;
+  }
+  function fermer(){ jeton++; jetonRech++; clearTimeout(minuterie); $("voile").hidden = true; document.body.style.overflow = ""; }
+
+  function verifDoublon(){
+    const t = norm($("fTitre").value);
+    const d = t && etat.items.find(i => i.id !== ed.id && norm(i.title) === t);
+    $("doublon").hidden = !d;
+    if (d) $("doublon").textContent = "Déjà dans le carnet (" + PLATS[d.plat].nom + ") : ajouté le " + fmt(d.date) + (d.rating != null ? ", noté " + d.rating + " sur 10." : ".");
+  }
+  function titreChange(){
+    $("erreur").hidden = true; verifDoublon();
+    if (ed.kind === "serie") planifier();
+  }
+  $("fTitre").addEventListener("input", titreChange);
+
+  $("btnAjout").addEventListener("click", () => ouvrir(null));
+  $("btnCancel").addEventListener("click", fermer);
+  $("voile").addEventListener("click", e => { if (e.target === $("voile")) fermer(); });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    if (!$("voileImp").hidden) fermerImport();
+    else if (!$("voile").hidden) fermer();
+    else { menuTri(false); menuDonnees(false); }
+  });
+
+  $("btnSave").addEventListener("click", () => {
+    const titre = $("fTitre").value.replace(/\s+/g, " ").trim();
+    if (!titre) { $("erreur").textContent = "Écrire d'abord le titre (ou prendre une photo)."; $("erreur").hidden = false; $("fTitre").focus(); return; }
+    const serie = ed.kind === "serie";
+    const champs = {
+      title: titre, plat: ed.plat, kind: ed.kind, rating: ed.note, comment: $("fCom").value.trim(),
+      poster: serie ? ed.poster : "", tvmazeId: serie ? ed.tvmazeId : null, source: serie ? ed.source : "",
+      seasons: serie ? ed.saisons.slice() : [], vus: serie ? [...ed.vus] : []
+    };
+    if (ed.id) { const it = etat.items.find(i => i.id === ed.id); if (it) Object.assign(it, champs); }
+    else etat.items.push(normItem(Object.assign({ id: newId(), date: Date.now() }, champs)));
+    etat.plat = ed.plat; etat.kind = ed.kind;
+    sauver(); fermer(); afficher();
+  });
+  $("btnSuppr").addEventListener("click", () => { $("btnSuppr").hidden = true; $("confSuppr").hidden = false; });
+  $("btnSupprNon").addEventListener("click", () => { $("btnSuppr").hidden = false; $("confSuppr").hidden = true; });
+  $("btnSupprOui").addEventListener("click", () => { etat.items = etat.items.filter(i => i.id !== ed.id); sauver(); fermer(); afficher(); });
+
+  /* ---------- Saisons et épisodes : affichage ---------- */
+  function majSerie(){
+    const serie = ed.kind === "serie";
+    $("blocSerie").hidden = !serie;
+    if (!serie) return;
+    const n = ed.saisons.length;
+    $("saisonsVide").hidden = n > 0; $("zoneEp").hidden = n === 0;
+    $("source").textContent = ed.source === "TVmaze" ? "Source des saisons et épisodes : TVmaze.com"
+      : ed.source === "Claude" ? "Saisons indiquées par Claude de mémoire : à vérifier." : (n ? "Saisons réglées à la main." : "");
+    if (n) {
+      if (ed.sc > n) ed.sc = n; if (ed.sc < 1) ed.sc = 1;
+      const bar = $("barSaisons"); bar.replaceChildren();
+      ed.saisons.forEach((nb, i) => {
+        const s = i + 1; const b = el("button", null, "S" + s); b.type = "button"; b.dataset.s = s;
+        b.setAttribute("aria-pressed", String(s === ed.sc));
+        b.addEventListener("click", () => { ed.sc = s; majSerie(); });
+        bar.append(b);
+      });
+      const grille = $("grilleEp"); grille.replaceChildren();
+      for (let e = 1; e <= ed.saisons[ed.sc - 1]; e++) {
+        const b = el("button", null, String(e)); b.type = "button"; b.dataset.e = e;
+        b.setAttribute("aria-label", "Saison " + ed.sc + ", épisode " + e);
+        b.setAttribute("aria-pressed", String(ed.vus.has(cle(ed.sc, e))));
+        b.addEventListener("click", () => {
+          const k = cle(ed.sc, e);
+          if (ed.vus.has(k)) ed.vus.delete(k); else ed.vus.add(k);
+          b.setAttribute("aria-pressed", String(ed.vus.has(k))); majCompteurs();
+        });
+        grille.append(b);
+      }
+      majCompteurs();
+    }
+    majManuel();
+  }
+  function majCompteurs(){
+    const nb = ed.saisons[ed.sc - 1] || 0; let vusS = 0;
+    for (let e = 1; e <= nb; e++) if (ed.vus.has(cle(ed.sc, e))) vusS++;
+    $("cptSaison").textContent = "Saison " + ed.sc + " : " + vusS + " épisode" + (vusS > 1 ? "s" : "") + " vu" + (vusS > 1 ? "s" : "") + " sur " + nb;
+    let tot = 0, v = 0;
+    ed.saisons.forEach((n, i) => { tot += n; let c = 0; for (let e = 1; e <= n; e++) if (ed.vus.has(cle(i + 1, e))) c++; v += c;
+      const b = $("barSaisons").children[i]; if (b) b.classList.toggle("fait", n > 0 && c === n); });
+    $("cptTotal").textContent = "Au total : " + v + " épisode" + (v > 1 ? "s" : "") + " vu" + (v > 1 ? "s" : "") + " sur " + tot;
+  }
+  $("btnToutes").addEventListener("click", () => { for (let e = 1; e <= ed.saisons[ed.sc - 1]; e++) ed.vus.add(cle(ed.sc, e)); majSerie(); });
+  $("btnAucun").addEventListener("click", () => { for (let e = 1; e <= ed.saisons[ed.sc - 1]; e++) ed.vus.delete(cle(ed.sc, e)); majSerie(); });
+
+  // Réglage à la main
+  function majManuel(){
+    const liste = $("manuelListe"); liste.replaceChildren();
+    ed.saisons.forEach((nb, i) => {
+      const l = el("div", "ligne-saison"); l.append(el("span", null, "Saison " + (i + 1)));
+      const st = el("div", "stepper");
+      const moins = el("button", null, "−"); moins.type = "button"; moins.setAttribute("aria-label", "Un épisode de moins, saison " + (i + 1));
+      const champ = document.createElement("input"); champ.type = "number"; champ.inputMode = "numeric"; champ.min = "0"; champ.max = "999"; champ.value = nb;
+      champ.setAttribute("aria-label", "Nombre d'épisodes de la saison " + (i + 1));
+      const plus = el("button", null, "+"); plus.type = "button"; plus.setAttribute("aria-label", "Un épisode de plus, saison " + (i + 1));
+      const regler = v => { ed.saisons[i] = Math.max(0, Math.min(999, v | 0)); ed.source = ed.source === "TVmaze" || ed.source === "Claude" ? "" : ed.source; majSerie(); };
+      moins.addEventListener("click", () => regler(ed.saisons[i] - 1));
+      plus.addEventListener("click", () => regler(ed.saisons[i] + 1));
+      champ.addEventListener("change", () => regler(parseInt(champ.value, 10) || 0));
+      st.append(moins, champ, plus); l.append(st); liste.append(l);
+    });
+    $("btnRetSaison").hidden = !ed.saisons.length;
+  }
+  $("btnAjSaison").addEventListener("click", () => {
+    ed.saisons.push(ed.saisons.length ? ed.saisons[ed.saisons.length - 1] || 8 : 8); ed.sc = ed.saisons.length; majSerie();
+  });
+  $("btnRetSaison").addEventListener("click", () => {
+    const s = ed.saisons.length; if (!s) return;
+    ed.saisons.pop(); for (const k of [...ed.vus]) if (parseInt(k, 10) === s) ed.vus.delete(k);
+    majSerie();
+  });
+
+  /* ---------- Saisons et épisodes : recherche sur internet ---------- */
+  const TVM = "https://api.tvmaze.com";
+  const cacheEp = new Map();
+  async function tvmChercher(t){
+    const r = await fetch(TVM + "/search/shows?q=" + encodeURIComponent(t));
+    if (!r.ok) throw new Error("http " + r.status);
+    const j = await r.json();
+    return j.slice(0, 6).map(x => ({
+      id: x.show.id, nom: x.show.name, annee: (x.show.premiered || "").slice(0, 4),
+      poster: ((x.show.image && x.show.image.medium) || "").replace(/^http:/, "https:")
+    }));
+  }
+  async function tvmSaisons(id){
+    const auj = new Date().toISOString().slice(0, 10);
+    if (cacheEp.has(id) && cacheEp.get(id).jour === auj) return cacheEp.get(id).s.slice();
+    const r = await fetch(TVM + "/shows/" + id + "/episodes");
+    if (!r.ok) throw new Error("http " + r.status);
+    const j = await r.json(); const par = [];
+    for (const e of j) {
+      if (e.number == null || !e.season || !e.airdate || e.airdate > auj) continue; // seulement ce qui est déjà diffusé
+      par[e.season - 1] = (par[e.season - 1] || 0) + 1;
+    }
+    const s = Array.from(par, v => v || 0);
+    while (s.length && !s[s.length - 1]) s.pop();
+    cacheEp.set(id, { jour: auj, s }); return s.slice();
+  }
+  /* Repli quand la page est ouverte dans claude.ai (pas d'accès direct à internet) : Claude répond de mémoire. */
+  async function saisonsClaude(titre){
+    try {
+      if (!(window.claude && typeof window.claude.use === "function")) return null;
+      const sample = await window.claude.use("sample"); if (!sample) return null;
+      const v = await sample.json(
+        "Série télévisée : « " + titre + " ». Donne le nombre d'épisodes de chaque saison déjà diffusée, d'après tes connaissances. " +
+        "Réponds uniquement en JSON, sans autre texte : {\"nom\":\"titre officiel\",\"saisons\":[8,9,8]}. " +
+        "Si la série t'est inconnue ou si tu n'es pas sûr, réponds {\"saisons\":[]}.", { modelTier: "quick" });
+      const s = v && Array.isArray(v.saisons) ? v.saisons.map(n => Math.max(0, Math.min(999, n | 0))) : [];
+      return s.length && s.length <= 60 ? { nom: v.nom || titre, saisons: s } : null;
+    } catch (e) { return null; }
+  }
+
+  function planifier(delai){
+    clearTimeout(minuterie);
+    const t = $("fTitre").value.trim();
+    if (ed.kind !== "serie" || t.length < 2) return;
+    minuterie = setTimeout(() => chercher(t), delai == null ? 900 : delai);
+  }
+  async function chercher(t){
+    const mien = ++jetonRech;
+    webStatut("Recherche des saisons sur internet…", true); $("candidats").replaceChildren();
+    let liste = null, reseau = false;
+    try { liste = await tvmChercher(t); } catch (e) { reseau = true; }
+    if (mien !== jetonRech) return;
+    if (liste && liste.length) { ed.liste = liste; await choisir(liste[0], mien); return; }
+    const c = await saisonsClaude(t);
+    if (mien !== jetonRech) return;
+    if (c) {
+      ed.saisons = c.saisons; ed.tvmazeId = null; ed.poster = ""; ed.source = "Claude"; ed.sc = Math.min(ed.sc, c.saisons.length) || 1; ed.liste = [];
+      webStatut(c.nom + " : " + c.saisons.length + " saison" + (c.saisons.length > 1 ? "s" : "") + ", " + somme(c.saisons) + " épisodes (d'après Claude, à vérifier).", false, true);
+      majSerie(); return;
+    }
+    webStatut(reseau
+      ? "Pas d'accès à internet pour le moment. Régler les saisons et épisodes à la main ci-dessous."
+      : "Aucune série trouvée sous ce nom. Vérifier l'orthographe, ou régler à la main ci-dessous.", false, true);
+    $("manuel").open = true; majSerie();
+  }
+  function rendreCandidats(){
+    const zone = $("candidats"); zone.replaceChildren();
+    if (!ed.liste || ed.liste.length < 2) return;
+    for (const c of ed.liste) {
+      const b = el("button"); b.type = "button"; b.setAttribute("aria-pressed", String(c.id === ed.tvmazeId));
+      b.append(affiche(c.nom, c.poster));
+      const s = el("small", null, c.nom); if (c.annee) s.append(el("br"), el("span", null, c.annee)); b.append(s);
+      b.addEventListener("click", () => { const m = ++jetonRech; choisir(c, m); });
+      zone.append(b);
+    }
+  }
+  async function choisir(c, mien){
+    webStatut("Chargement des épisodes de « " + c.nom + " »…", true);
+    try {
+      const s = await tvmSaisons(c.id);
+      if (mien !== jetonRech) return;
+      ed.saisons = s; ed.tvmazeId = c.id; ed.poster = c.poster; ed.source = "TVmaze";
+      ed.sc = Math.max(1, Math.min(ed.sc, s.length));
+      rendreCandidats(); majSerie();
+      webStatut(c.nom + (c.annee ? " (" + c.annee + ")" : "") + " : " + s.length + " saison" + (s.length > 1 ? "s" : "") + ", " + somme(s) + " épisodes déjà diffusés."
+        + (ed.liste && ed.liste.length > 1 ? " Ce n'est pas la bonne série ? Toucher une autre affiche ci-dessous." : ""));
+      if (!s.length) { webStatut("Aucun épisode diffusé pour « " + c.nom + " ». Régler à la main ci-dessous si besoin.", false, true); }
+    } catch (e) {
+      if (mien !== jetonRech) return;
+      webStatut("Impossible de charger les épisodes. Régler à la main ci-dessous.", false, true); $("manuel").open = true;
+    }
+  }
+  $("btnMaj").addEventListener("click", () => {
+    const t = $("fTitre").value.trim(); if (t.length < 2) { $("erreur").textContent = "Écrire d'abord le titre."; $("erreur").hidden = false; return; }
+    if (ed.tvmazeId) { const m = ++jetonRech; choisir({ id: ed.tvmazeId, nom: t, annee: "", poster: ed.poster }, m); }
+    else chercher(t);
+  });
+
+  /* ---------- Photo → titre ---------- */
+  $("btnPhoto").addEventListener("click", () => $("fichierPhoto").click());
+  $("btnGalerie").addEventListener("click", () => $("fichierGalerie").click());
+  for (const id of ["fichierPhoto", "fichierGalerie"]) {
+    $(id).addEventListener("change", e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) lirePhoto(f); });
+  }
+  async function lirePhoto(fichier){
+    const mien = ++jeton;
+    statut("Lecture de la photo en cours…", true); $("pistes").replaceChildren();
+    try {
+      const res = await lireTitre(fichier);
+      if (mien !== jeton) return;
+      if (!res.length) { statut("Aucun titre lisible sur la photo. Écrire le titre à la main, ou reprendre une photo plus nette."); return; }
+      $("fTitre").value = res[0]; titreChange();
+      if (res.length > 1) {
+        statut("Titre proposé ci-dessous : vérifier. Si ce n'est pas le bon, toucher une autre ligne lue :");
+        for (const t of res.slice(1)) {
+          const b = el("button", null, t); b.type = "button";
+          b.addEventListener("click", () => { $("fTitre").value = t; titreChange(); }); $("pistes").append(b);
+        }
+      } else statut("Titre lu sur la photo : vérifier qu'il est correct.");
+    } catch (err) { if (mien === jeton) statut("La lecture automatique n'a pas marché. Écrire le titre à la main."); }
+  }
+  async function lireTitre(fichier){
+    const canvas = await versCanvas(fichier, 1600);
+    const viaClaude = await essaiClaude(canvas);
+    if (viaClaude) return [viaClaude];
+    return await essaiTesseract(canvas);
+  }
+  async function versCanvas(fichier, max){
+    let bmp;
+    try { bmp = await createImageBitmap(fichier, { imageOrientation: "from-image" }); } catch (e) { bmp = await createImageBitmap(fichier); }
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+    return c;
+  }
+  const versBlob = (c, type, q) => new Promise(ok => c.toBlob(ok, type, q));
+  async function essaiClaude(canvas){
+    try {
+      if (!(window.claude && typeof window.claude.use === "function")) return null;
+      const sample = await window.claude.use("sample"); if (!sample) return null;
+      const lim = await sample.limits(); if (!lim || !lim.images) return null;
+      const blob = await versBlob(canvas, "image/jpeg", 0.85);
+      const r = await sample(
+        "Cette photo montre un écran (télévision ou téléphone) sur une plateforme de streaming. " +
+        "Réponds uniquement par le titre du film ou de la série affiché, tel qu'il est écrit, sans guillemets ni commentaire. " +
+        "Si aucun titre n'est lisible, réponds exactement INCONNU.", { images: [blob], modelTier: "quick" });
+      const t = String((r && r.text) || "").trim().split("\n")[0].replace(/^["«»'\s]+|["«»'\s]+$/g, "");
+      if (!t || /^INCONNU/i.test(t) || t.length > 120) return null;
+      return t;
+    } catch (e) { return null; }
+  }
+  function chargerTesseract(){
+    return new Promise((ok, ko) => {
+      if (window.Tesseract) return ok();
+      const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+      s.onload = ok; s.onerror = () => ko(new Error("tesseract")); document.head.appendChild(s);
+    });
+  }
+  function preparerPourOCR(src){
+    const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+    const x = c.getContext("2d"); x.drawImage(src, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height), p = d.data; let s = 0;
+    for (let i = 0; i < p.length; i += 4) { const g = .299 * p[i] + .587 * p[i + 1] + .114 * p[i + 2]; p[i] = g; s += g; }
+    const inverser = s / (p.length / 4) < 128;
+    for (let i = 0; i < p.length; i += 4) {
+      let g = p[i]; if (inverser) g = 255 - g; g = Math.max(0, Math.min(255, (g - 128) * 1.4 + 128)); p[i] = p[i + 1] = p[i + 2] = g;
+    }
+    x.putImageData(d, 0, 0); return c;
+  }
+  const nettoyer = s => String(s || "").replace(/[|\\_~^<>{}\[\]=*#@]/g, " ").replace(/\s+/g, " ").trim();
+  async function essaiTesseract(canvas){
+    await chargerTesseract();
+    const { data } = await window.Tesseract.recognize(preparerPourOCR(canvas), "fra+eng");
+    let lignes = (data.lines || []).map(l => ({ txt: nettoyer(l.text), conf: l.confidence || 0, h: l.bbox ? Math.max(1, l.bbox.y1 - l.bbox.y0) : 1 }));
+    if (!lignes.length) lignes = String(data.text || "").split("\n").map(t => ({ txt: nettoyer(t), conf: 60, h: 1 }));
+    lignes = lignes.filter(l => l.txt.length >= 2 && l.conf >= 50 && /[A-Za-zÀ-ÿ0-9]{2,}/.test(l.txt));
+    lignes.sort((a, b) => b.h * b.conf - a.h * a.conf);
+    const vus = new Set(), sortie = [];
+    for (const l of lignes) { const k = norm(l.txt); if (k && !vus.has(k)) { vus.add(k); sortie.push(l.txt); } }
+    return sortie.slice(0, 5);
+  }
+
+
+  /* ---------- Export Excel / import ---------- */
+  const URL_XLSX = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  function chargerXLSX(){
+    return new Promise((ok, ko) => {
+      if (window.XLSX) return ok(window.XLSX);
+      const s = document.createElement("script"); s.src = URL_XLSX;
+      s.onload = () => window.XLSX ? ok(window.XLSX) : ko(new Error("xlsx"));
+      s.onerror = () => ko(new Error("xlsx")); document.head.appendChild(s);
+    });
+  }
+  function toast(msg){
+    const t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.m); toast.m = setTimeout(() => { t.hidden = true; }, 8000);
+  }
+  function plages(nums){
+    nums = [...nums].sort((a, b) => a - b); const out = []; let i = 0;
+    while (i < nums.length) { let j = i; while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1) j++; out.push(j > i ? nums[i] + "-" + nums[j] : String(nums[i])); i = j + 1; }
+    return out.join(", ");
+  }
+  function detailVus(it){
+    const v = vusValides(it), parts = [];
+    it.seasons.forEach((nb, i) => { const eps = []; for (let e = 1; e <= nb; e++) if (v.set.has(cle(i + 1, e))) eps.push(e); if (eps.length) parts.push("S" + (i + 1) + " : " + plages(eps)); });
+    return parts.join(" ; ");
+  }
+  const ENTETE = ["Titre", "Type", "Plateforme", "Note sur 10", "Commentaire", "Date d'ajout", "Dernier épisode vu", "Épisodes vus",
+                  "Total épisodes", "Détail saisons", "Détail épisodes vus", "Identifiant TVmaze", "Affiche (lien)"];
+  function ligneDe(it){
+    const serie = it.kind === "serie", v = serie ? vusValides(it) : null, total = serie ? somme(it.seasons) : 0;
+    return [it.title, serie ? "Série" : "Film", PLATS[it.plat].nom, it.rating == null ? "" : it.rating, it.comment, new Date(it.date),
+      serie && v.dernier ? "S" + v.dernier.s + " É" + v.dernier.e : "", serie && total ? v.n : "", serie && total ? total : "",
+      serie ? it.seasons.join(", ") : "", serie ? detailVus(it) : "", it.tvmazeId || "", it.poster || ""];
+  }
+  function classeur(X, items){
+    const wb = X.utils.book_new();
+    const feuille = (nom, liste) => {
+      const ws = X.utils.aoa_to_sheet([ENTETE].concat(liste.map(ligneDe)), { cellDates: true });
+      ws["!cols"] = [34, 8, 13, 11, 40, 13, 16, 12, 14, 20, 32, 16, 40].map(w => ({ wch: w }));
+      ws["!autofilter"] = { ref: "A1:M" + (liste.length + 1) };
+      for (let r = 2; r <= liste.length + 1; r++) { const c = ws["F" + r]; if (c) c.z = "dd/mm/yyyy"; }
+      X.utils.book_append_sheet(wb, ws, nom);
+    };
+    feuille("Tout", items);
+    for (const k of ORDRE) { const l = items.filter(i => i.plat === k); if (l.length) feuille(PLATS[k].nom, l); }
+    return wb;
+  }
+  // Repli sans bibliothèque : CSV (séparateur « ; » et BOM UTF-8 pour que Excel français l'ouvre bien)
+  const proteger = s => { s = String(s == null ? "" : s); return /^[=+\-@\t\r]/.test(s) ? "'" + s : s; };
+  const celluleCSV = s => { s = proteger(s); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  function versCSV(items){
+    const l = [ENTETE.map(celluleCSV).join(";")];
+    for (const it of items) { const r = ligneDe(it); r[5] = fmt(it.date); l.push(r.map(celluleCSV).join(";")); }
+    return l.join("\r\n");
+  }
+  async function livrer(blob, nom){
+    if (window.claude && typeof window.claude.use === "function") {
+      try { const dl = await window.claude.use("downloads"); if (!dl) return false; await dl.save({ filename: nom, data: blob }); return true; }
+      catch (e) { return false; }
+    }
+    try {
+      const url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 15000); return true;
+    } catch (e) { return false; }
+  }
+  async function exporter(){
+    menuDonnees(false);
+    const items = etat.items.slice().sort((a, b) => a.date - b.date);
+    if (!items.length) { toast("Le carnet est vide : rien à exporter pour l'instant."); return; }
+    const jour = new Date().toISOString().slice(0, 10);
+    let blob, nom, csv = false;
+    try {
+      const X = await chargerXLSX();
+      const out = X.write(classeur(X, items), { bookType: "xlsx", type: "array", cellDates: true });
+      blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      nom = "carnet-films-series-" + jour + ".xlsx";
+    } catch (e) {
+      csv = true; blob = new Blob(["﻿" + versCSV(items)], { type: "text/csv;charset=utf-8" }); nom = "carnet-films-series-" + jour + ".csv";
+    }
+    const ok = await livrer(blob, nom);
+    toast(ok
+      ? (csv ? "Le lecteur Excel n'a pas pu se charger (connexion ?) : le carnet a été exporté en .csv, qui s'ouvre aussi dans Excel. " : "")
+        + "Fichier « " + nom + " » créé : " + items.length + " titre" + (items.length > 1 ? "s" : "") + "."
+      : "L'export n'a pas pu être enregistré depuis cette page.");
+  }
+  $("btnExport").addEventListener("click", exporter);
+
+  /* --- Import --- */
+  const SYN = {
+    titre: ["titre", "title", "nom"], type: ["type"], plat: ["plateforme", "platform"], note: ["note sur 10", "note", "rating"],
+    com: ["commentaire", "commentaires", "comment"], date: ["date d ajout", "date ajout", "date"],
+    saisons: ["detail saisons", "saisons"], vus: ["detail episodes vus"], tvm: ["identifiant tvmaze", "tvmaze"], poster: ["affiche lien", "affiche"]
+  };
+  const ALIAS_PLAT = { "netflix": "netflix", "prime video": "prime", "prime": "prime", "amazon prime video": "prime", "amazon prime": "prime", "amazon": "prime",
+    "disney": "disney", "disney plus": "disney", "tf1": "tf1", "tf1 plus": "tf1" };
+
+  function parseCSV(txt){
+    txt = txt.replace(/^﻿/, "");
+    const premiere = txt.split(/\r?\n/, 1)[0];
+    const d = [";", ",", "\t"].map(c => [c, premiere.split(c).length]).sort((a, b) => b[1] - a[1])[0][0];
+    const rows = []; let row = [], cell = "", q = false;
+    for (let i = 0; i < txt.length; i++) {
+      const ch = txt[i];
+      if (q) { if (ch === '"') { if (txt[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === d) { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") { if (ch === "\r" && txt[i + 1] === "\n") i++; row.push(cell); cell = ""; rows.push(row); row = []; }
+      else cell += ch;
+    }
+    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    return rows.map(r => r.map(c => c.replace(/^'(?=[=+\-@])/, "")));
+  }
+  function lireNote(v){
+    if (v === "" || v == null) return null;
+    const n = typeof v === "number" ? v : parseFloat(String(v).replace(",", "."));
+    return isFinite(n) ? Math.max(0, Math.min(10, Math.round(n))) : null;
+  }
+  function lireDate(v){
+    if (v instanceof Date && !isNaN(v)) return v.getTime();
+    if (typeof v === "number" && v > 20000 && v < 80000) return Math.round((v - 25569) * 86400000);
+    const s = String(v == null ? "" : v).trim(); if (!s) return null;
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1], 12).getTime();
+    const t = Date.parse(s); return isNaN(t) ? null : t;
+  }
+  function lireSaisons(v){ return String(v == null ? "" : v).split(/[^0-9]+/).filter(Boolean).slice(0, 60).map(n => Math.min(999, parseInt(n, 10))); }
+  function lireVus(txt){
+    const out = [];
+    for (const part of String(txt == null ? "" : txt).split(";")) {
+      const m = part.match(/S\s*(\d+)\s*:\s*(.+)/i); if (!m) continue;
+      const s = parseInt(m[1], 10);
+      for (const seg of m[2].split(",")) {
+        const r = seg.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/); if (!r) continue;
+        const a = parseInt(r[1], 10), b = r[2] ? parseInt(r[2], 10) : a;
+        for (let e = a; e <= Math.min(b, a + 998, 999); e++) out.push(cle(s, e));
+      }
+    }
+    return out;
+  }
+  function versItems(rows){
+    const h = rows.findIndex(r => r.some(c => SYN.titre.includes(norm(c))));
+    if (h < 0) throw new Error("colonne");
+    const col = {};
+    rows[h].forEach((c, i) => { const n = norm(c); for (const k in SYN) if (!(k in col) && SYN[k].includes(n)) col[k] = i; });
+    const val = (r, k) => (k in col && r[col[k]] != null) ? r[col[k]] : "";
+    const items = [], vu = new Set(); let ignores = 0, inconnues = 0, doublons = 0;
+    const base = Date.now();
+    rows.slice(h + 1).forEach((r, idx) => {
+      const titre = String(val(r, "titre")).replace(/\s+/g, " ").trim();
+      if (!titre) { if (r.some(c => String(c == null ? "" : c).trim())) ignores++; return; }
+      let plat = ALIAS_PLAT[norm(val(r, "plat"))]; if (!plat) { plat = "netflix"; inconnues++; }
+      const k = plat + "|" + norm(titre); if (vu.has(k)) { doublons++; return; } vu.add(k);
+      let saisons = lireSaisons(val(r, "saisons")); const vus = lireVus(val(r, "vus"));
+      const typeTxt = norm(val(r, "type"));
+      const serie = /^serie/.test(typeTxt) || (!typeTxt && (saisons.length > 0 || vus.length > 0));
+      if (serie && !saisons.length && vus.length) {
+        for (const key of vus) { const [s, e] = key.split("-").map(Number); if (s > 60) continue; while (saisons.length < s) saisons.push(0); saisons[s - 1] = Math.max(saisons[s - 1], e); }
+      }
+      const tvm = parseInt(val(r, "tvm"), 10), poster = String(val(r, "poster")).trim();
+      items.push(normItem({
+        title: titre, plat, kind: serie ? "serie" : "film", rating: lireNote(val(r, "note")), comment: String(val(r, "com")).trim(),
+        date: (lireDate(val(r, "date")) || base) + idx,
+        tvmazeId: isFinite(tvm) && tvm > 0 ? tvm : null, poster: /^https:\/\/static\.tvmaze\.com\//.test(poster) ? poster : "",
+        source: isFinite(tvm) && tvm > 0 ? "TVmaze" : "", seasons: serie ? saisons : [], vus: serie ? vus : []
+      }));
+    });
+    return { items, ignores, inconnues, doublons };
+  }
+
+  const cleItem = i => i.plat + "|" + norm(i.title);
+  const trouver = n => etat.items.find(i => cleItem(i) === cleItem(n));
+  function fusionner(liste){
+    let ajoutes = 0, fusionnes = 0;
+    for (const n of liste) {
+      const ex = trouver(n);
+      if (!ex) { etat.items.push(n); ajoutes++; continue; }
+      fusionnes++;
+      if (n.kind === "serie") ex.kind = "serie";
+      const len = Math.max(ex.seasons.length, n.seasons.length);
+      ex.seasons = Array.from({ length: len }, (_, i) => Math.max(ex.seasons[i] || 0, n.seasons[i] || 0));
+      ex.vus = [...new Set(ex.vus.concat(n.vus))];
+      if (ex.rating == null) ex.rating = n.rating;
+      if (!ex.comment) ex.comment = n.comment;
+      if (!ex.poster) ex.poster = n.poster;
+      if (!ex.tvmazeId) { ex.tvmazeId = n.tvmazeId; if (!ex.source) ex.source = n.source; }
+      ex.date = Math.min(ex.date, n.date);
+    }
+    return { ajoutes, fusionnes };
+  }
+
+  let impEnCours = null;
+  function ouvrirImport(){ $("voileImp").hidden = false; document.body.style.overflow = "hidden"; $("feuilleImp").scrollTop = 0; }
+  function fermerImport(){ $("voileImp").hidden = true; impEnCours = null; if ($("voile").hidden) document.body.style.overflow = ""; }
+  function impMessage(txt, avert){
+    $("impResume").textContent = txt; $("impChoix").hidden = true; $("confRempl").hidden = true; $("btnImpRempl").hidden = false;
+    $("impAvert").hidden = !avert; $("impAvert").textContent = avert || "";
+  }
+  $("btnImport").addEventListener("click", () => { menuDonnees(false); $("fichierImport").click(); });
+  $("fichierImport").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) lireImport(f); });
+  $("btnImpFermer").addEventListener("click", fermerImport);
+  $("voileImp").addEventListener("click", e => { if (e.target === $("voileImp")) fermerImport(); });
+
+  async function lireImport(f){
+    impEnCours = null; ouvrirImport(); impMessage("Lecture du fichier « " + f.name + " »…");
+    try {
+      if (f.size > 8e6) throw new Error("taille");
+      let rows;
+      if (/\.(csv|txt)$/i.test(f.name)) rows = parseCSV(await f.text());
+      else {
+        let X; try { X = await chargerXLSX(); } catch (e) { throw new Error("lecteur"); }
+        const wb = X.read(await f.arrayBuffer(), { type: "array", cellDates: true });
+        const nomF = wb.SheetNames.find(n => norm(n) === "tout") || wb.SheetNames[0];
+        rows = X.utils.sheet_to_json(wb.Sheets[nomF], { header: 1, raw: true, defval: "" });
+      }
+      const res = versItems(rows);
+      if (!res.items.length) { impMessage("Aucun titre trouvé dans ce fichier.", "Utiliser un fichier créé avec « Exporter vers Excel » dans cette appli."); return; }
+      impEnCours = res;
+      const nbS = res.items.filter(i => i.kind === "serie").length, nouveaux = res.items.filter(n => !trouver(n)).length;
+      impMessage(res.items.length + " titre" + (res.items.length > 1 ? "s" : "") + " trouvé" + (res.items.length > 1 ? "s" : "")
+        + " (" + nbS + " série" + (nbS > 1 ? "s" : "") + ", " + (res.items.length - nbS) + " film" + (res.items.length - nbS > 1 ? "s" : "") + "). "
+        + nouveaux + " nouveau" + (nouveaux > 1 ? "x" : "") + ", " + (res.items.length - nouveaux) + " déjà dans le carnet.",
+        [res.inconnues ? res.inconnues + " ligne" + (res.inconnues > 1 ? "s" : "") + " sans plateforme reconnue : rangée" + (res.inconnues > 1 ? "s" : "") + " sur Netflix, à corriger si besoin. " : "",
+         res.ignores ? res.ignores + " ligne" + (res.ignores > 1 ? "s" : "") + " sans titre ignorée" + (res.ignores > 1 ? "s" : "") + ". " : "",
+         res.doublons ? res.doublons + " doublon" + (res.doublons > 1 ? "s" : "") + " dans le fichier ignoré" + (res.doublons > 1 ? "s" : "") + "." : ""].join("").trim());
+      $("impChoix").hidden = false;
+    } catch (err) {
+      const m = err && err.message;
+      impMessage(m === "lecteur" ? "Impossible de charger le lecteur Excel (connexion ?)."
+        : m === "taille" ? "Ce fichier est trop gros pour être un export du carnet."
+        : m === "colonne" ? "Colonne « Titre » introuvable dans ce fichier."
+        : "Ce fichier n'a pas pu être lu.",
+        m === "lecteur" ? "Réessayer avec une connexion, ou enregistrer le fichier au format .csv (Fichier > Enregistrer sous) puis l'importer." : "Utiliser un fichier .xlsx ou .csv créé avec « Exporter vers Excel » dans cette appli.");
+    }
+  }
+  $("btnImpFusion").addEventListener("click", () => {
+    if (!impEnCours) return;
+    const r = fusionner(impEnCours.items); sauver(); afficher(); fermerImport();
+    toast("Import terminé : " + r.ajoutes + " ajouté" + (r.ajoutes > 1 ? "s" : "") + ", " + r.fusionnes + " complété" + (r.fusionnes > 1 ? "s" : "") + ".");
+  });
+  $("btnImpRempl").addEventListener("click", () => {
+    $("confRemplTxt").textContent = "Les " + etat.items.length + " titre" + (etat.items.length > 1 ? "s" : "") + " actuels du carnet seront effacés et remplacés par les " + impEnCours.items.length + " du fichier.";
+    $("confRempl").hidden = false; $("btnImpRempl").hidden = true;
+  });
+  $("btnReplNon").addEventListener("click", () => { $("confRempl").hidden = true; $("btnImpRempl").hidden = false; });
+  $("btnReplOui").addEventListener("click", () => {
+    if (!impEnCours) return;
+    const n = impEnCours.items.length; etat.items = impEnCours.items; $("btnImpRempl").hidden = false;
+    sauver(); afficher(); fermerImport();
+    toast("Carnet remplacé : " + n + " titre" + (n > 1 ? "s" : "") + " importé" + (n > 1 ? "s" : "") + ".");
+  });
+
+  /* ---------- Démarrage ---------- */
+  $("alerte").hidden = stockageOk;
+  afficher();
+})();
+</script>
+</body>
+</html>
